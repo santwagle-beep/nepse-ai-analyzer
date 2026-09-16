@@ -1,21 +1,33 @@
 from flask import Flask, jsonify
+
 from data_collector import (
     create_database,
     collect_market_data,
     database_stats,
     get_stock
 )
+
 from candle_engine import (
     create_candle_table,
     build_all_daily_candles,
     get_candle
 )
+
 from historical_importer import (
     create_history_table,
     import_watchlist,
     get_history,
     history_stats
 )
+
+from data_quality import (
+    check_stock,
+    check_all,
+    market_quality
+)
+
+from market_universe import get_symbols
+
 
 app = Flask(__name__)
 
@@ -36,104 +48,60 @@ def home():
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>NEPSE AI Analyzer</title>
-
-        <style>
-            body {{
-                font-family: Arial, sans-serif;
-                background: #0b1220;
-                color: white;
-                padding: 20px;
-                margin: 0;
-            }}
-
-            .card {{
-                background: #172033;
-                padding: 18px;
-                margin: 12px 0;
-                border-radius: 14px;
-            }}
-
-            a {{
-                color: #21c77a;
-                text-decoration: none;
-            }}
-
-            button {{
-                background: #21c77a;
-                color: white;
-                border: none;
-                padding: 14px 20px;
-                border-radius: 10px;
-                font-size: 16px;
-            }}
-
-            .stock {{
-                display: inline-block;
-                background: #26344d;
-                padding: 10px 14px;
-                margin: 5px;
-                border-radius: 8px;
-            }}
-        </style>
     </head>
 
     <body>
 
         <h1>NEPSE AI Analyzer</h1>
 
-        <div class="card">
-            <h2>Live Market Data</h2>
+        <p>Live stocks: {stats["stocks"]}</p>
+        <p>Live records: {stats["records"]}</p>
 
-            <p>Stocks: <b>{stats["stocks"]}</b></p>
-            <p>Snapshots: <b>{stats["records"]}</b></p>
+        <p>Historical stocks: {history["stocks"]}</p>
+        <p>Historical candles: {history["candles"]}</p>
 
-            <a href="/update">
-                <button>Update Live Data</button>
-            </a>
-        </div>
+        <hr>
 
-        <div class="card">
-            <h2>Historical Database</h2>
+        <p><a href="/update">Update Live Data</a></p>
 
-            <p>Stocks: <b>{history["stocks"]}</b></p>
-            <p>Daily candles: <b>{history["candles"]}</b></p>
+        <p><a href="/import-history">Import Watchlist History</a></p>
 
-            <a href="/import-history">
-                <button>Import History</button>
-            </a>
-        </div>
+        <p><a href="/universe">Test Market Universe</a></p>
 
-        <div class="card">
-            <h2>Daily Candle Builder</h2>
+        <p><a href="/quality">Data Quality</a></p>
 
-            <a href="/update-candles">
-                <button>Build Daily Candles</button>
-            </a>
-        </div>
+        <p><a href="/history/HATHY">HATHY History</a></p>
 
-        <div class="card">
-            <h2>Watchlist</h2>
+        <p><a href="/history/SICL">SICL History</a></p>
 
-            <div class="stock">
-                <a href="/stock/SICL">SICL</a>
-            </div>
+        <p><a href="/history/NLG">NLG History</a></p>
 
-            <div class="stock">
-                <a href="/stock/NLG">NLG</a>
-            </div>
-
-            <div class="stock">
-                <a href="/stock/MAKAR">MAKAR</a>
-            </div>
-
-            <div class="stock">
-                <a href="/stock/HATHY">HATHY</a>
-            </div>
-        </div>
+        <p><a href="/history/MAKAR">MAKAR History</a></p>
 
     </body>
     </html>
     """
+
+
+@app.route("/universe")
+def universe():
+
+    try:
+
+        symbols = get_symbols()
+
+        return jsonify({
+            "success": True,
+            "symbols": len(symbols),
+            "sample": symbols[:50]
+        })
+
+    except Exception as error:
+
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
 
 
 @app.route("/update")
@@ -183,12 +151,10 @@ def history(symbol):
 
     try:
 
-        data = get_history(
-            symbol,
-            100
-        )
+        data = get_history(symbol, 100)
 
         return jsonify({
+            "success": True,
             "symbol": symbol.upper(),
             "candles": data
         })
@@ -201,27 +167,31 @@ def history(symbol):
         }), 500
 
 
-@app.route("/update-candles")
-def update_candles():
+@app.route("/quality")
+def quality():
 
     try:
 
-        from datetime import datetime
-
-        trade_date = datetime.utcnow().strftime(
-            "%Y-%m-%d"
-        )
-
-        candles = build_all_daily_candles(
-            trade_date
-        )
-
         return jsonify({
             "success": True,
-            "trade_date": trade_date,
-            "candles_created": len(candles),
-            "sample": candles[:5]
+            "summary": market_quality(),
+            "stocks": check_all()
         })
+
+    except Exception as error:
+
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
+
+
+@app.route("/quality/<symbol>")
+def quality_symbol(symbol):
+
+    try:
+
+        return jsonify(check_stock(symbol))
 
     except Exception as error:
 
@@ -249,10 +219,7 @@ def stock(symbol):
 @app.route("/candle/<symbol>/<trade_date>")
 def candle(symbol, trade_date):
 
-    data = get_candle(
-        symbol,
-        trade_date
-    )
+    data = get_candle(symbol, trade_date)
 
     if not data:
 
@@ -263,25 +230,6 @@ def candle(symbol, trade_date):
         }), 404
 
     return jsonify(data)
-
-
-@app.route("/history-test")
-def history_test():
-
-    from history_test import test_history
-
-    try:
-
-        return jsonify(
-            test_history()
-        )
-
-    except Exception as error:
-
-        return jsonify({
-            "success": False,
-            "error": str(error)
-        }), 500
 
 
 @app.route("/health")
