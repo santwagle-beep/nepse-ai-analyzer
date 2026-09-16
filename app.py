@@ -10,24 +10,31 @@ from candle_engine import (
     build_all_daily_candles,
     get_candle
 )
+from historical_importer import (
+    create_history_table,
+    import_watchlist,
+    get_history,
+    history_stats
+)
 
 app = Flask(__name__)
 
 create_database()
 create_candle_table()
+create_history_table()
 
 
 @app.route("/")
 def home():
 
     stats = database_stats()
+    history = history_stats()
 
     return f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
         <title>NEPSE AI Analyzer</title>
 
         <style>
@@ -75,53 +82,36 @@ def home():
         <h1>NEPSE AI Analyzer</h1>
 
         <div class="card">
+            <h2>Live Market Data</h2>
 
-            <h2>Market Database</h2>
+            <p>Stocks: <b>{stats["stocks"]}</b></p>
+            <p>Snapshots: <b>{stats["records"]}</b></p>
 
-            <p>
-                Stocks:
-                <b>{stats["stocks"]}</b>
-            </p>
-
-            <p>
-                Records:
-                <b>{stats["records"]}</b>
-            </p>
-
-            <p>
-                <a href="/update">
-                    <button>Update Market Data</button>
-                </a>
-            </p>
-
+            <a href="/update">
+                <button>Update Live Data</button>
+            </a>
         </div>
 
         <div class="card">
+            <h2>Historical Database</h2>
 
+            <p>Stocks: <b>{history["stocks"]}</b></p>
+            <p>Daily candles: <b>{history["candles"]}</b></p>
+
+            <a href="/import-history">
+                <button>Import History</button>
+            </a>
+        </div>
+
+        <div class="card">
             <h2>Daily Candle Builder</h2>
 
-            <p>
-                <a href="/update-candles">
-                    <button>Build Daily Candles</button>
-                </a>
-            </p>
-
+            <a href="/update-candles">
+                <button>Build Daily Candles</button>
+            </a>
         </div>
 
         <div class="card">
-
-            <h2>Historical Data Test</h2>
-
-            <p>
-                <a href="/history-test">
-                    <button>Test Historical Data</button>
-                </a>
-            </p>
-
-        </div>
-
-        <div class="card">
-
             <h2>Watchlist</h2>
 
             <div class="stock">
@@ -139,7 +129,6 @@ def home():
             <div class="stock">
                 <a href="/stock/HATHY">HATHY</a>
             </div>
-
         </div>
 
     </body>
@@ -168,6 +157,50 @@ def update():
         }), 500
 
 
+@app.route("/import-history")
+def import_history():
+
+    try:
+
+        results = import_watchlist()
+
+        return jsonify({
+            "success": True,
+            "results": results,
+            "statistics": history_stats()
+        })
+
+    except Exception as error:
+
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
+
+
+@app.route("/history/<symbol>")
+def history(symbol):
+
+    try:
+
+        data = get_history(
+            symbol,
+            100
+        )
+
+        return jsonify({
+            "symbol": symbol.upper(),
+            "candles": data
+        })
+
+    except Exception as error:
+
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
+
+
 @app.route("/update-candles")
 def update_candles():
 
@@ -175,7 +208,9 @@ def update_candles():
 
         from datetime import datetime
 
-        trade_date = datetime.utcnow().strftime("%Y-%m-%d")
+        trade_date = datetime.utcnow().strftime(
+            "%Y-%m-%d"
+        )
 
         candles = build_all_daily_candles(
             trade_date
@@ -187,23 +222,6 @@ def update_candles():
             "candles_created": len(candles),
             "sample": candles[:5]
         })
-
-    except Exception as error:
-
-        return jsonify({
-            "success": False,
-            "error": str(error)
-        }), 500
-
-
-@app.route("/history-test")
-def history_test():
-
-    from history_test import test_history
-
-    try:
-
-        return jsonify(test_history())
 
     except Exception as error:
 
@@ -245,6 +263,25 @@ def candle(symbol, trade_date):
         }), 404
 
     return jsonify(data)
+
+
+@app.route("/history-test")
+def history_test():
+
+    from history_test import test_history
+
+    try:
+
+        return jsonify(
+            test_history()
+        )
+
+    except Exception as error:
+
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
 
 
 @app.route("/health")
