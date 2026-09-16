@@ -1,62 +1,29 @@
 from flask import Flask, jsonify
+from data_collector import create_database, test_source
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
     return """
-    <html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>NEPSE AI Analyzer</title>
-        <style>
-            body {
-                font-family: Arial;
-                background: #0b1220;
-                color: white;
-                padding: 20px;
-            }
-            .card {
-                background: #172033;
-                padding: 18px;
-                margin: 12px 0;
-                border-radius: 14px;
-            }
-            .green { color: #21c77a; }
-            .yellow { color: #f4c542; }
-        </style>
-    </head>
-    <body>
-        <h1>📈 NEPSE AI Analyzer</h1>
-        <p class="green">● System Online</p>
-
-        <div class="card">
-            <h2>Market Scanner</h2>
-            <p>Daily / Weekly / Monthly</p>
-        </div>
-
-        <div class="card">
-            <h2>Watchlist</h2>
-            <p>SICL</p>
-            <p>NLG</p>
-            <p>MAKAR</p>
-            <p>HATHY</p>
-        </div>
-
-        <div class="card">
-            <h2>Analysis Engine</h2>
-            <p>🕯 Candle Analysis — Ready</p>
-            <p>📊 OHLCV — Ready</p>
-            <p>📈 Indicators — Coming next</p>
-            <p>🌊 Elliott Wave — Coming next</p>
-        </div>
-    </body>
-    </html>
+    <h1>NEPSE AI Analyzer</h1>
+    <p>System: ONLINE</p>
+    <p>Collector: READY</p>
+    <p>Database: READY</p>
     """
+
+@app.route("/test-source")
+def test_source_route():
+    result = test_source()
+    return jsonify({
+        "nepsealpha_connection": result
+    })
 
 @app.route("/health")
 def health():
     return jsonify({"status": "online"})
+
+create_database()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
