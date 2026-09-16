@@ -1,20 +1,4 @@
-Perfect. 👍 Now we'll put the first working version of the analyzer into your GitHub repository.
-
-### Step 3 — Create the first file
-
-On your **`nepse-ai-analyzer`** repository:
-
-1. Tap **Add file**.
-2. Choose **Create new file**.
-3. For the filename enter:
-
-```text
-app.py
-```
-
-4. Paste this code:
-
-```python
+python
 from flask import Flask, jsonify
 
 app = Flask(__name__)
@@ -77,11 +61,6 @@ def health():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-```
-
-5. Scroll down and tap **Commit changes**.
-6. Leave the default commit message.
-7. Tap **Commit changes** again.
 
 ### Step 4
 
