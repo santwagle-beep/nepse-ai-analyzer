@@ -1,4 +1,3 @@
-```python
 from flask import Flask, jsonify
 from data_collector import (
     create_database,
@@ -262,4 +261,3 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=10000
     )
-```
