@@ -1,8 +1,10 @@
+```python
 from flask import Flask, jsonify
 from data_collector import (
     create_database,
     collect_market_data,
-    database_stats
+    database_stats,
+    get_stock
 )
 from candle_engine import (
     create_candle_table,
@@ -31,10 +33,11 @@ def home():
 
         <style>
             body {{
-                font-family: Arial;
+                font-family: Arial, sans-serif;
                 background: #0b1220;
                 color: white;
                 padding: 20px;
+                margin: 0;
             }}
 
             .card {{
@@ -46,15 +49,24 @@ def home():
 
             a {{
                 color: #21c77a;
+                text-decoration: none;
             }}
 
             button {{
                 background: #21c77a;
                 color: white;
-                border: 0;
-                padding: 14px;
+                border: none;
+                padding: 14px 20px;
                 border-radius: 10px;
                 font-size: 16px;
+            }}
+
+            .stock {{
+                display: inline-block;
+                background: #26344d;
+                padding: 10px 14px;
+                margin: 5px;
+                border-radius: 8px;
             }}
         </style>
     </head>
@@ -99,12 +111,35 @@ def home():
 
         <div class="card">
 
+            <h2>Historical Data Test</h2>
+
+            <p>
+                <a href="/history-test">
+                    <button>Test Historical Data</button>
+                </a>
+            </p>
+
+        </div>
+
+        <div class="card">
+
             <h2>Watchlist</h2>
 
-            <p><a href="/stock/SICL">SICL</a></p>
-            <p><a href="/stock/NLG">NLG</a></p>
-            <p><a href="/stock/MAKAR">MAKAR</a></p>
-            <p><a href="/stock/HATHY">HATHY</a></p>
+            <div class="stock">
+                <a href="/stock/SICL">SICL</a>
+            </div>
+
+            <div class="stock">
+                <a href="/stock/NLG">NLG</a>
+            </div>
+
+            <div class="stock">
+                <a href="/stock/MAKAR">MAKAR</a>
+            </div>
+
+            <div class="stock">
+                <a href="/stock/HATHY">HATHY</a>
+            </div>
 
         </div>
 
@@ -162,10 +197,25 @@ def update_candles():
         }), 500
 
 
+@app.route("/history-test")
+def history_test():
+
+    from history_test import test_history
+
+    try:
+
+        return jsonify(test_history())
+
+    except Exception as error:
+
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
+
+
 @app.route("/stock/<symbol>")
 def stock(symbol):
-
-    from data_collector import get_stock
 
     data = get_stock(symbol)
 
@@ -190,26 +240,13 @@ def candle(symbol, trade_date):
     if not data:
 
         return jsonify({
-            "error": "Candle not found"
+            "error": "Candle not found",
+            "symbol": symbol.upper(),
+            "trade_date": trade_date
         }), 404
 
     return jsonify(data)
-```python
-@app.route("/history-test")
-def history_test():
 
-    from history_test import test_history
-
-    try:
-        return jsonify(test_history())
-
-    except Exception as error:
-
-        return jsonify({
-            "success": False,
-            "error": str(error)
-        }), 500
-```
 
 @app.route("/health")
 def health():
@@ -225,3 +262,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=10000
     )
+```
