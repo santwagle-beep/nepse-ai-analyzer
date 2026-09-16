@@ -194,7 +194,22 @@ def candle(symbol, trade_date):
         }), 404
 
     return jsonify(data)
+```python
+@app.route("/history-test")
+def history_test():
 
+    from history_test import test_history
+
+    try:
+        return jsonify(test_history())
+
+    except Exception as error:
+
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
+```
 
 @app.route("/health")
 def health():
