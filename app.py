@@ -1,4 +1,3 @@
-python
 from flask import Flask, jsonify
 
 app = Flask(__name__)
@@ -61,13 +60,3 @@ def health():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
-### Step 4
-
-Once `app.py` appears in your repository, **stop there**.
-
-Reply:
-
-**`app.py done`**
-
-Then I'll give you the next step: adding the requirements file and connecting the repository to a **free Render server**.
