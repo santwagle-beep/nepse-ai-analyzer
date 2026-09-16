@@ -1,36 +1,24 @@
 import requests
 
-SOURCE_URL = "https://nepsealpha.com/nepse-data"
+YONEPSE_URL = "https://shubhamnpk.github.io/yonepse/data/nepse_data.json"
 
 def create_database():
     return True
 
 def test_source():
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-
     try:
         response = requests.get(
-            SOURCE_URL,
-            headers=headers,
-            timeout=20,
-            allow_redirects=True
+            YONEPSE_URL,
+            timeout=20
         )
+
+        data = response.json()
 
         return {
             "success": response.status_code == 200,
             "status_code": response.status_code,
-            "final_url": response.url,
-            "content_type": response.headers.get(
-                "content-type",
-                ""
-            ),
-            "size": len(response.content),
-            "server": response.headers.get(
-                "server",
-                ""
-            )
+            "stocks": len(data),
+            "sample": data[:2]
         }
 
     except Exception as error:
@@ -38,3 +26,4 @@ def test_source():
             "success": False,
             "error": str(error)
         }
+``w
